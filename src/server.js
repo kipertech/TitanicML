@@ -32,7 +32,7 @@ app.set('port', port);
  * Fake SSL key for localhost is also added
  */
 
-let server = process.env.IS_LOCAL === 'true' ? https.createServer({ key, cert }, app) : http.createServer(app);
+let server = (process.env.IS_LOCAL === 'true') ? https.createServer({ key, cert }, app) : http.createServer(app);
 
 /**
  * Listen on provided port, on all network interfaces.

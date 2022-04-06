@@ -7,6 +7,7 @@ import cors from 'cors';
 
 // Routers
 import { indexRouter } from './routes';
+import {mainRouter} from "./routes/route_main";
 
 // Generate Express app instance
 let app = express();
@@ -24,6 +25,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Routers
 app.use('/', indexRouter);
+app.use('/main', mainRouter);
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => next(createError(404)));

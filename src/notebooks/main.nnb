@@ -1,0 +1,448 @@
+{
+    "cells": [
+        {
+            "language": "markdown",
+            "source": [
+                "Read the data first, of course"
+            ],
+            "outputs": []
+        },
+        {
+            "language": "javascript",
+            "source": [
+                "import * as dfd from 'danfojs-node';\r\nconst df = await dfd.readCSV(\"D:\\\\Projects\\\\OU\\\\TitanicML\\\\src\\\\data\\\\train.csv\");\r\ndf.head(5).print();"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stdout",
+                            "value": [
+                                "╔════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╗",
+                                "║            │ PassengerId       │ Survived          │ Pclass            │ Name              │ ...               │ Fare              │ Cabin             │ Embarked          ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 0          │ 1                 │ 0                 │ 3                 │ Braund, Mr. Owe…  │ ...               │ 7.25              │ null              │ S                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 1          │ 2                 │ 1                 │ 1                 │ Cumings, Mrs. J…  │ ...               │ 71.2833           │ C85               │ C                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 2          │ 3                 │ 1                 │ 3                 │ Heikkinen, Miss…  │ ...               │ 7.925             │ null              │ S                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 3          │ 4                 │ 1                 │ 1                 │ Futrelle, Mrs. …  │ ...               │ 53.1              │ C123              │ S                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 4          │ 5                 │ 0                 │ 3                 │ Allen, Mr. Will…  │ ...               │ 8.05              │ null              │ S                 ║",
+                                "╚════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╝",
+                                "",
+                                "",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "markdown",
+            "source": [
+                "The column \"Name\" seems to include a lot of different components including First Name, Last Name and Title, let's break them apart"
+            ],
+            "outputs": []
+        },
+        {
+            "language": "javascript",
+            "source": [
+                "let rawNames = df['Name'].values,\r\n    firstNames = rawNames.map((item) => item.split(', ')[0]),\r\n    lastNames = rawNames.map((item) => item.split('. ')[1]?.split(' ')[0]),\r\n    titles = rawNames.map((item) => item.split(', ')[1]?.split('. ')[0]);\r\n\r\n// Add new columns to dataframe\r\ndf = df.addColumn('Title', titles);\r\ndf = df.addColumn('FirstName', firstNames);\r\ndf = df.addColumn('LastName', lastNames);\r\n\r\n// Remove the original column \"Name\"\r\ndf = df.drop({ columns: ['Name'] });\r\n\r\n// View data\r\ndf.head(5).print();"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stdout",
+                            "value": [
+                                "╔════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╗",
+                                "║            │ PassengerId       │ Survived          │ Pclass            │ Sex               │ ...               │ Title             │ FirstName         │ LastName          ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 0          │ 1                 │ 0                 │ 3                 │ male              │ ...               │ Mr                │ Braund            │ Owen              ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 1          │ 2                 │ 1                 │ 1                 │ female            │ ...               │ Mrs               │ Cumings           │ John              ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 2          │ 3                 │ 1                 │ 3                 │ female            │ ...               │ Miss              │ Heikkinen         │ Laina             ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 3          │ 4                 │ 1                 │ 1                 │ female            │ ...               │ Mrs               │ Futrelle          │ Jacques           ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 4          │ 5                 │ 0                 │ 3                 │ male              │ ...               │ Mr                │ Allen             │ William           ║",
+                                "╚════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╝",
+                                "",
+                                "",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "markdown",
+            "source": [
+                "Let see how many types of <b>Title</b> we have"
+            ],
+            "outputs": []
+        },
+        {
+            "language": "javascript",
+            "source": [
+                "let titleValueCount = df['Title'].valueCounts(),\r\n    displayObj = {};\r\n\r\ntitleValueCount.index.forEach((title, index) => displayObj[title] = titleValueCount.values[index]);\r\nconsole.log(displayObj);    "
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stdout",
+                            "value": [
+                                "{",
+                                "  Mr: 517,",
+                                "  Mrs: 125,",
+                                "  Miss: 182,",
+                                "  Master: 40,",
+                                "  Don: 1,",
+                                "  Rev: 6,",
+                                "  Dr: 7,",
+                                "  Mme: 1,",
+                                "  Ms: 1,",
+                                "  Major: 2,",
+                                "  Lady: 1,",
+                                "  Sir: 1,",
+                                "  Mlle: 2,",
+                                "  Col: 2,",
+                                "  Capt: 1,",
+                                "  'the Countess': 1,",
+                                "  Jonkheer: 1",
+                                "}",
+                                "",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "markdown",
+            "source": [
+                "Seems like a lot of titles. And as we can see, apart from the first 4, the rest are very minimal in quantity\r\n<br/>-> We should merge them into the big ones, or in another word, group them together\r\n<br/>\r\n<br/>\r\nWith a little internet search, we found out that:\r\n- <b>\"Master\"</b> indicates male persons who are under 16, we'll call them <b>Boy</b>.\r\n- <b>\"Capt\", \"Don\", \"Major\", \"Col\", \"Rev\", \"Dr\", \"Sir\", \"Mr\", \"Jonkheer\"</b> are all referred to adult male, so we call them <b>Man</b>\r\n- <b>\"Dona\", \"the Countess\", \"Mme\", \"Mlle\", \"Ms\", \"Miss\", \"Lady\", \"Mrs\"</b> are all referred to adult female, so we call them <b>Woman</b>"
+            ],
+            "outputs": []
+        },
+        {
+            "language": "javascript",
+            "source": [
+                "let manList = [\"Capt\", \"Don\", \"Major\", \"Col\", \"Rev\", \"Dr\", \"Sir\", \"Mr\", \"Jonkheer\"],\r\n    womanList = [\"Dona\", \"the Countess\", \"Mme\", \"Mlle\", \"Ms\", \"Miss\", \"Lady\", \"Mrs\"];\r\n\r\nlet newTitleData = df['Title'].values.map((title) => {\r\n    if (manList.includes(title))\r\n    {\r\n        return(\"man\");\r\n    }\r\n    else if (womanList.includes(title))\r\n    {\r\n        return(\"woman\");\r\n    }\r\n    else return(\"boy\");\r\n});\r\n\r\n// Put the data back into dataframe\r\ndf = df.drop({ columns: ['Title'] });\r\ndf = df.addColumn('Title', newTitleData);\r\n\r\n// View data\r\ndf.head(2).print();"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stdout",
+                            "value": [
+                                "╔════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╗",
+                                "║            │ PassengerId       │ Survived          │ Pclass            │ Sex               │ ...               │ FirstName         │ LastName          │ Title             ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 0          │ 1                 │ 0                 │ 3                 │ male              │ ...               │ Braund            │ Owen              │ man               ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 1          │ 2                 │ 1                 │ 1                 │ female            │ ...               │ Cumings           │ John              │ woman             ║",
+                                "╚════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╝",
+                                "",
+                                "",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "markdown",
+            "source": [
+                "Similarly, how many types of <b>Sex</b> we have"
+            ],
+            "outputs": []
+        },
+        {
+            "language": "javascript",
+            "source": [
+                "df['Sex'].valueCounts().print()"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stdout",
+                            "value": [
+                                "╔════════╤═════╗",
+                                "║ male   │ 577 ║",
+                                "╟────────┼─────╢",
+                                "║ female │ 314 ║",
+                                "╚════════╧═════╝",
+                                "",
+                                "",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "markdown",
+            "source": [
+                "Let's transform these into something numeric for later calculations and model training"
+            ],
+            "outputs": []
+        },
+        {
+            "language": "javascript",
+            "source": [
+                "['Title', 'LastName', 'Sex'].forEach((columnName) => {\r\n    let encoder = new dfd.LabelEncoder(),\r\n        dataSeries = new dfd.Series(df[columnName].values);\r\n \r\n    encoder.fit(dataSeries);\r\n\r\n    // Replace the entire column\r\n    df = df.drop({ columns: [columnName] });\r\n    df = df.addColumn(columnName, encoder.transform(dataSeries.values));\r\n});\r\n\r\n// View Data\r\ndf.head(10).print();"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stdout",
+                            "value": [
+                                "╔════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╗",
+                                "║            │ PassengerId       │ Survived          │ Pclass            │ Age               │ ...               │ LastName          │ Title             │ Sex               ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 0          │ 1                 │ 0                 │ 3                 │ 22                │ ...               │ Owen              │ 0                 │ 0                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 1          │ 2                 │ 1                 │ 1                 │ 38                │ ...               │ John              │ 1                 │ 1                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 2          │ 3                 │ 1                 │ 3                 │ 26                │ ...               │ Laina             │ 1                 │ 1                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 3          │ 4                 │ 1                 │ 1                 │ 35                │ ...               │ Jacques           │ 1                 │ 1                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 4          │ 5                 │ 0                 │ 3                 │ 35                │ ...               │ William           │ 0                 │ 0                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 5          │ 6                 │ 0                 │ 3                 │ null              │ ...               │ James             │ 0                 │ 0                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 6          │ 7                 │ 0                 │ 1                 │ 54                │ ...               │ Timothy           │ 0                 │ 0                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 7          │ 8                 │ 0                 │ 3                 │ 2                 │ ...               │ Gosta             │ 2                 │ 0                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 8          │ 9                 │ 1                 │ 3                 │ 27                │ ...               │ Oscar             │ 1                 │ 1                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 9          │ 10                │ 1                 │ 2                 │ 14                │ ...               │ Nicholas          │ 1                 │ 1                 ║",
+                                "╚════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╝",
+                                "",
+                                "",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "markdown",
+            "source": [
+                "We notice that the column <b>Cabin</b> has a lot of <b>NULLs</b>, let see how big is that portion"
+            ],
+            "outputs": []
+        },
+        {
+            "language": "javascript",
+            "source": [
+                "let nullCount = Number(df['Cabin'].valueCounts().values[0]),\r\n    totalRowCount = df['PassengerId'].values.length;\r\n\r\nconsole.log((nullCount / totalRowCount * 100).toFixed(2) + '%');"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stdout",
+                            "value": [
+                                "77.10%",
+                                "",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "markdown",
+            "source": [
+                "With 77.10% of missing \"Cabin\" information, maybe this info is useless for our model\r\n<br/>...the same thing can be said for \"PassengerId\", \"Ticket\", \"Embarked\", and \"FirstName\" as well, they don't have much related meaning"
+            ],
+            "outputs": []
+        },
+        {
+            "language": "javascript",
+            "source": [
+                "df = df.drop({ columns: ['Cabin', 'PassengerId', 'Ticket', 'Embarked', 'FirstName'] });\r\ndf.head(10).print();"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stdout",
+                            "value": [
+                                "╔════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╤═══════════════════╗",
+                                "║            │ Survived          │ Pclass            │ Age               │ SibSp             │ Parch             │ Fare              │ LastName          │ Title             │ Sex               ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 0          │ 0                 │ 3                 │ 22                │ 1                 │ 0                 │ 7.25              │ Owen              │ 0                 │ 0                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 1          │ 1                 │ 1                 │ 38                │ 1                 │ 0                 │ 71.2833           │ John              │ 1                 │ 1                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 2          │ 1                 │ 3                 │ 26                │ 0                 │ 0                 │ 7.925             │ Laina             │ 1                 │ 1                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 3          │ 1                 │ 1                 │ 35                │ 1                 │ 0                 │ 53.1              │ Jacques           │ 1                 │ 1                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 4          │ 0                 │ 3                 │ 35                │ 0                 │ 0                 │ 8.05              │ William           │ 0                 │ 0                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 5          │ 0                 │ 3                 │ null              │ 0                 │ 0                 │ 8.4583            │ James             │ 0                 │ 0                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 6          │ 0                 │ 1                 │ 54                │ 0                 │ 0                 │ 51.8625           │ Timothy           │ 0                 │ 0                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 7          │ 0                 │ 3                 │ 2                 │ 3                 │ 1                 │ 21.075            │ Gosta             │ 2                 │ 0                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 8          │ 1                 │ 3                 │ 27                │ 0                 │ 2                 │ 11.1333           │ Oscar             │ 1                 │ 1                 ║",
+                                "╟────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────┼───────────────────╢",
+                                "║ 9          │ 1                 │ 2                 │ 14                │ 1                 │ 0                 │ 30.0708           │ Nicholas          │ 1                 │ 1                 ║",
+                                "╚════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╧═══════════════════╝",
+                                "",
+                                "",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "markdown",
+            "source": [
+                "Training time! Actually, before that let's see what we have left..."
+            ],
+            "outputs": []
+        },
+        {
+            "language": "javascript",
+            "source": [
+                "df.ctypes.print(); "
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stdout",
+                            "value": [
+                                "╔══════════╤═════════╗",
+                                "║ Survived │ int32   ║",
+                                "╟──────────┼─────────╢",
+                                "║ Pclass   │ int32   ║",
+                                "╟──────────┼─────────╢",
+                                "║ Age      │ float32 ║",
+                                "╟──────────┼─────────╢",
+                                "║ SibSp    │ int32   ║",
+                                "╟──────────┼─────────╢",
+                                "║ Parch    │ int32   ║",
+                                "╟──────────┼─────────╢",
+                                "║ Fare     │ float32 ║",
+                                "╟──────────┼─────────╢",
+                                "║ LastName │ string  ║",
+                                "╟──────────┼─────────╢",
+                                "║ Title    │ int32   ║",
+                                "╟──────────┼─────────╢",
+                                "║ Sex      │ int32   ║",
+                                "╚══════════╧═════════╝",
+                                "",
+                                "",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "markdown",
+            "source": [
+                "Prepare for model training based on the column <b>Survived</b>"
+            ],
+            "outputs": []
+        },
+        {
+            "language": "javascript",
+            "source": [
+                "let xTrain, yTrain;\r\nxTrain = df.iloc({ columns: [`1:`] });\r\nyTrain = df['Survived'];\r\n\r\n// Standardize the data with MinMaxScaler\r\nlet scaler = new dfd.MinMaxScaler();\r\nscaler.fit(xTrain)\r\nxTrain = scaler.transform(xTrain)\r\n\r\n// Grab the tensor data for training\r\nconst xTrainTensor = xTrain.tensor, yTrainTensor = yTrain.tensor;"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stdout",
+                            "value": [
+                                "",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "markdown",
+            "source": [
+                "Building the models for training"
+            ],
+            "outputs": []
+        },
+        {
+            "language": "javascript",
+            "source": [
+                "import * as tf from '@tensorflow/tfjs';\r\n\r\nconst model = tf.sequential();\r\nmodel.add(tf.layers.dense({ inputShape: [8], units: 124, activation: 'relu', kernelInitializer: 'leCunNormal' }));\r\nmodel.add(tf.layers.dense({ units: 64, activation: 'relu' }));\r\nmodel.add(tf.layers.dense({ units: 32, activation: 'relu' }));\r\nmodel.add(tf.layers.dense({ units: 1, activation: \"sigmoid\" }))\r\nmodel.summary();"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stdout",
+                            "value": [
+                                "__________________________________________________________________________________________",
+                                "",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "markdown",
+            "source": [
+                "Train the models"
+            ],
+            "outputs": []
+        },
+        {
+            "language": "javascript",
+            "source": [
+                "import moment from 'moment';\r\n\r\n// Compile model\r\nmodel.compile({\r\n    optimizer: \"rmsprop\",\r\n    loss: 'binaryCrossentropy',\r\n    metrics: ['accuracy'],\r\n});\r\n\r\nconst startedAt = moment().unix();\r\nconsole.log('[STARTED] Model Training');\r\n\r\nmodel\r\n    .fit(xTrainTensor, yTrainTensor, {\r\n        batchSize: 32,\r\n        epochs: 15,\r\n        validationSplit: 0.2,\r\n        callbacks: {\r\n            onEpochEnd: (epoch, logs) => console.log(`EPOCH (${epoch + 1}): Train Accuracy: ${(logs.acc * 100).toFixed(2)}, Val Accuracy:  ${(logs.val_acc * 100).toFixed(2)}\\n`)\r\n        }\r\n    })\r\n    .then(() => console.log('[DONE] Model Training, took ' + (moment().unix() - startedAt) + 's'))\r\n    .catch((error) => console.log('[ERROR] Model Training', error.message));"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stdout",
+                            "value": [
+                                "[STARTED] Model Training",
+                                "",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

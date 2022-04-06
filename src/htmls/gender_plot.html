@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <script src="https://cdn.jsdelivr.net/npm/danfojs@1.1.0/lib/bundle.min.js"></script>
+    <title>Document</title>
+</head>
+
+<body>
+
+    <div id="plot_div"></div>
+    <script>
+
+        const s = new dfd.Series([1, 3, 2, 6, 10, 34, 40, 51, 90, 75])
+        s.plot("plot_div").bar()
+
+    </script>
+</body>
+
+</html>
