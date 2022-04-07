@@ -137,7 +137,7 @@ function cleanData(dataPath = '', viewOutput = false)
                 printData(df, viewOutput, 'Gender Count');
 
                 // Encode the columns
-                ['LastName', 'Title', 'Sex', 'Embarked', 'AgeGroup', 'FareGroup'].forEach((columnName) => {
+                ['LastName', 'Title', 'Sex', 'Embarked', 'AgeGroup', 'FareGroup', 'FamilySize'].forEach((columnName) => {
                     let encoder = new dfd.LabelEncoder(),
                         dataSeries = new dfd.Series(df[columnName].values);
 
@@ -161,6 +161,10 @@ function cleanData(dataPath = '', viewOutput = false)
                 df = df.drop({ columns: ['Cabin', 'PassengerId', 'Ticket', 'FirstName'] });
                 printData(df, viewOutput, 'After dropping PassengerId, Cabin, Ticket, and FirstName');
 
+                // Remaining empty values
+                console.log('[INFO] Missing values check');
+                df.isNa().sum().print();
+
                 // Remaining columns
                 console.log('[INFO] Remaining column types');
                 console.log(df.ctypes.index);
@@ -177,8 +181,11 @@ function cleanData(dataPath = '', viewOutput = false)
                 scaler.fit(xTrain)
                 xTrain = scaler.transform(xTrain)
 
+                // Number of total final column count (for Tensorflow shape count)
+                const columnCount = df.ctypes.index.length;
+
                 // Return data
-                resolve({ xTrain, yTrain, passengerIDList, survivedList });
+                resolve({ xTrain, yTrain, passengerIDList, survivedList, columnCount });
             })
             .catch((error) => reject(error.message));
     });
@@ -188,19 +195,19 @@ function cleanData(dataPath = '', viewOutput = false)
 mainRouter.get('/trainModel', (request, response) => {
     cleanData("D:\\Projects\\OU\\TitanicML\\src\\data\\train.csv", true)
         .then((result) => {
-            const { xTrain, yTrain } = result;
+            const { xTrain, yTrain, columnCount } = result;
 
             // Create the neural network with 4 layers
             const model = tf.sequential();
-            model.add(tf.layers.dense({ inputShape: [10], units: 124, activation: 'relu', kernelInitializer: 'leCunNormal' }));
+            model.add(tf.layers.dense({ inputShape: [columnCount - 1], units: 124, activation: 'relu', kernelInitializer: 'leCunNormal' }));
             model.add(tf.layers.dense({ units: 64, activation: 'relu' }));
             model.add(tf.layers.dense({ units: 32, activation: 'relu' }));
-            model.add(tf.layers.dense({ units: 1, activation: 'sigmoid' }));
+            model.add(tf.layers.dense({ units: 1, activation: 'sigmoid', kernelInitializer: 'leCunNormal' }));
             model.summary();
 
             // Compile model
             model.compile({
-                optimizer: "rmsprop",
+                optimizer: 'adam',
                 loss: 'binaryCrossentropy',
                 metrics: ['accuracy']
             });
@@ -211,7 +218,7 @@ mainRouter.get('/trainModel', (request, response) => {
             model
                 .fit(xTrain.tensor, yTrain.tensor, {
                     batchSize: 32,
-                    epochs: 35,
+                    epochs: 50,
                     validationSplit: 0.2,
                     callbacks: {
                         onEpochEnd: (epoch, logs) => {
@@ -232,11 +239,8 @@ mainRouter.get('/trainModel', (request, response) => {
                             // Map into submission data format
                             let submissionArr = testModel.passengerIDList.map((id, index) => ({ 'PassengerId': id, 'Survived': Math.round(predictResult[index]) }));
 
-                            // Convert JSON to CSV
-                            const csv = json2csv.parse(submissionArr);
-
                             // Write to file
-                            writeFile(`./predictedResult.csv`, csv)
+                            writeFile(`./predictedResult.csv`, json2csv.parse(submissionArr))
                                 .then(() => Success(response, 'Successfully trained model, took ' + moment().unix() - startedAt + 's', 200))
                                 .catch((writeError) => Abort(response, 'Write Error', 500, writeError.message));
                         });
