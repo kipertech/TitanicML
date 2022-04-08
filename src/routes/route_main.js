@@ -11,6 +11,8 @@ import { RandomForestClassifier as rfClassifier, RandomForestRegressor as rfRegr
 import LogisticRegression from 'ml-logistic-regression';
 import { Matrix } from 'ml-matrix';
 
+import { DecisionTreeClassifier, DecisionTreeRegression } from 'ml-cart';
+
 import { Abort, Success } from '../utils';
 
 const mainRouter = Router();
@@ -433,6 +435,36 @@ mainRouter.get('/logisticRegression', (request, response) => {
 
                     // Write to file
                     writeFile(`./predictedResult_logisticRegression.csv`, json2csv.parse(submissionArr))
+                        .then(() => Success(response, 'Successfully trained model, took ' + (moment().unix() - startedAt).toString() + 's', 200))
+                        .catch((writeError) => Abort(response, 'Write Error', 500, writeError.message));
+                });
+        })
+        .catch((error) => Abort(response, 'Failed to read TRAIN file', 500, error.message));
+});
+// endregion
+
+// region Decision Tree - CART
+mainRouter.get('/decisionTree', (request, response) => {
+    const startedAt = moment().unix();
+
+    cleanData("D:\\Projects\\OU\\TitanicML\\src\\data\\train.csv", true, true)
+        .then((result) => {
+            const { xTrain, yTrain } = result;
+
+            const classifier = new DecisionTreeRegression();
+            classifier.train(xTrain.values, yTrain.values);
+
+            // Create models for TEST data
+            cleanData("D:\\Projects\\OU\\TitanicML\\src\\data\\test.csv", false, true)
+                .then((testModel) => {
+                    // Predict model
+                    const predictedResult = classifier.predict(testModel.xTrain.values);
+
+                    // Map into submission data format
+                    let submissionArr = testModel.passengerIDList.map((id, index) => ({ 'PassengerId': id, 'Survived': Math.round(predictedResult[index]) }));
+
+                    // Write to file
+                    writeFile(`./predictedResult_decisionTree.csv`, json2csv.parse(submissionArr))
                         .then(() => Success(response, 'Successfully trained model, took ' + (moment().unix() - startedAt).toString() + 's', 200))
                         .catch((writeError) => Abort(response, 'Write Error', 500, writeError.message));
                 });
