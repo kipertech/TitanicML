@@ -4,6 +4,8 @@ import * as tf from '@tensorflow/tfjs';
 import moment from 'moment';
 import * as json2csv from 'json2csv';
 import { writeFile } from 'fs/promises';
+import { RandomForestClassifier, RandomForestRegression } from 'ml-random-forest';
+import { RandomForestClassifier as rfClassifier, RandomForestRegressor as rfRegression } from 'random-forest';
 
 import { Abort, Success } from '../utils';
 
@@ -21,7 +23,7 @@ function printData(df, viewOutput = false, message = '')
 // endregion
 
 // region Function - Clean Data
-function cleanData(dataPath = '', viewOutput = false)
+function cleanData(dataPath = '', viewOutput = false, standardize = true)
 {
     return new Promise((resolve, reject) => {
         dfd
@@ -177,9 +179,12 @@ function cleanData(dataPath = '', viewOutput = false)
                 yTrain = df['Survived'];
 
                 // Standardize the data with MinMaxScaler
-                let scaler = new dfd.MinMaxScaler();
-                scaler.fit(xTrain)
-                xTrain = scaler.transform(xTrain)
+                if (standardize)
+                {
+                    let scaler = new dfd.MinMaxScaler();
+                    scaler.fit(xTrain)
+                    xTrain = scaler.transform(xTrain)
+                }
 
                 // Number of total final column count (for Tensorflow shape count)
                 const columnCount = df.ctypes.index.length;
@@ -192,6 +197,7 @@ function cleanData(dataPath = '', viewOutput = false)
 }
 // endregion
 
+// region Tensorflow
 mainRouter.get('/trainModel', (request, response) => {
     cleanData("D:\\Projects\\OU\\TitanicML\\src\\data\\train.csv", true)
         .then((result) => {
@@ -251,5 +257,154 @@ mainRouter.get('/trainModel', (request, response) => {
         })
         .catch((error) => Abort(response, 'Failed to read TRAIN file', 500, error));
 });
+// endregion
+
+// region Random Forest - Classifier
+mainRouter.get('/randomForestClassifier', (request, response) => {
+    const startedAt = moment().unix();
+
+    cleanData("D:\\Projects\\OU\\TitanicML\\src\\data\\train.csv", true, false)
+        .then((result) => {
+            const { xTrain, yTrain, columnCount } = result;
+
+            const options = {
+                seed: 3,
+                maxFeatures: 0.8,
+                replacement: true,
+                nEstimators: 25
+            };
+
+            const classifier = new RandomForestClassifier(options);
+            classifier.train(xTrain.values, yTrain.values);
+
+            // Create models for TEST data
+            cleanData("D:\\Projects\\OU\\TitanicML\\src\\data\\test.csv", false, false)
+                .then((testModel) => {
+                    // Predict model
+                    const predictedResult = classifier.predict(testModel.xTrain.values);
+
+                    // Map into submission data format
+                    let submissionArr = testModel.passengerIDList.map((id, index) => ({ 'PassengerId': id, 'Survived': Math.round(predictedResult[index]) }));
+
+                    // Write to file
+                    writeFile(`./predictedResult.csv`, json2csv.parse(submissionArr))
+                        .then(() => Success(response, 'Successfully trained model, took ' + moment().unix() - startedAt + 's', 200))
+                        .catch((writeError) => Abort(response, 'Write Error', 500, writeError.message));
+                });
+        })
+        .catch((error) => Abort(response, 'Failed to read TRAIN file', 500, error.message));
+});
+// endregion
+
+// region Random Forest - Regression
+mainRouter.get('/randomForestRegression', (request, response) => {
+    const startedAt = moment().unix();
+
+    cleanData("D:\\Projects\\OU\\TitanicML\\src\\data\\train.csv", true, true)
+        .then((result) => {
+            const { xTrain, yTrain } = result;
+
+            const options = {
+                seed: 3,
+                maxFeatures: 2,
+                replacement: false,
+                nEstimators: 200
+            };
+
+            const regression = new RandomForestRegression(options);
+            regression.train(xTrain.values, yTrain.values);
+
+            // Create models for TEST data
+            cleanData("D:\\Projects\\OU\\TitanicML\\src\\data\\test.csv", false, true)
+                .then((testModel) => {
+                    // Predict model
+                    const predictedResult = regression.predict(testModel.xTrain.values);
+
+                    // Map into submission data format
+                    let submissionArr = testModel.passengerIDList.map((id, index) => ({ 'PassengerId': id, 'Survived': Math.round(predictedResult[index]) }));
+
+                    // Write to file
+                    writeFile(`./predictedResult_RandomForest_Regression.csv`, json2csv.parse(submissionArr))
+                        .then(() => Success(response, 'Successfully trained model, took ' + moment().unix() - startedAt + 's', 200))
+                        .catch((writeError) => Abort(response, 'Write Error', 500, writeError.message));
+                });
+        })
+        .catch((error) => Abort(response, 'Failed to read TRAIN file', 500, error.message));
+});
+// endregion
+
+// region Random Forest - Classifier 2
+mainRouter.get('/randomForestClassifier2', (request, response) => {
+    const startedAt = moment().unix();
+
+    cleanData("D:\\Projects\\OU\\TitanicML\\src\\data\\train.csv", true, false)
+        .then((result) => {
+            const { xTrain, yTrain, columnCount } = result;
+
+            const rf = new rfClassifier({
+                nEstimators: 200,
+                maxDepth: 20,
+                maxFeatures: 'auto',
+                minSamplesLeaf: 15,
+                minInfoGain: 0
+            });
+
+            rf.train(xTrain.values, yTrain.values);
+
+            // Create models for TEST data
+            cleanData("D:\\Projects\\OU\\TitanicML\\src\\data\\test.csv", false, false)
+                .then((testModel) => {
+                    // Predict model
+                    const predictedResult = rf.predict(testModel.xTrain.values);
+
+                    // Map into submission data format
+                    let submissionArr = testModel.passengerIDList.map((id, index) => ({ 'PassengerId': id, 'Survived': Math.round(predictedResult[index]) }));
+
+                    // Write to file
+                    writeFile(`./predictedResult_RandomForest_Classifier2.csv`, json2csv.parse(submissionArr))
+                        .then(() => Success(response, 'Successfully trained model, took ' + (moment().unix() - startedAt).toString() + 's', 200))
+                        .catch((writeError) => Abort(response, 'Write Error', 500, writeError.message));
+                });
+        })
+        .catch((error) => Abort(response, 'Failed to read TRAIN file', 500, error.message));
+});
+// endregion
+
+// region Random Forest - Regression 2
+mainRouter.get('/randomForestRegression2', (request, response) => {
+    const startedAt = moment().unix();
+
+    cleanData("D:\\Projects\\OU\\TitanicML\\src\\data\\train.csv", true, true)
+        .then((result) => {
+            const { xTrain, yTrain } = result;
+
+            const rf = new rfRegression({
+                nEstimators: 100,
+                maxDepth: 10,
+                maxFeatures: 'auto',
+                minSamplesLeaf: 5,
+                minInfoGain: 0
+            });
+
+            rf.train(xTrain.values, yTrain.values);
+
+            // Create models for TEST data
+            cleanData("D:\\Projects\\OU\\TitanicML\\src\\data\\test.csv", false, true)
+                .then((testModel) => {
+                    // Predict model
+                    const predictedResult = rf.predict(testModel.xTrain.values);
+
+                    // Map into submission data format
+                    let submissionArr = testModel.passengerIDList.map((id, index) => ({ 'PassengerId': id, 'Survived': Math.round(predictedResult[index]) }));
+
+                    // Write to file
+                    writeFile(`./predictedResult_RandomForest_Regression2.csv`, json2csv.parse(submissionArr))
+                        .then(() => Success(response, 'Successfully trained model, took ' + (moment().unix() - startedAt).toString() + 's', 200))
+                        .catch((writeError) => Abort(response, 'Write Error', 500, writeError.message));
+                });
+        })
+        .catch((error) => Abort(response, 'Failed to read TRAIN file', 500, error.message));
+});
+// endregion
 
 export { mainRouter };

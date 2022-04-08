@@ -57,11 +57,13 @@
         "jsonwebtoken": "^8.5.1",
         "jwt-decode": "^3.1.2",
         "lodash": "^4.17.21",
+        "ml-random-forest": "^2.1.0",
         "moment": "^2.29.1",
         "moment-timezone": "^0.5.34",
         "morgan": "~1.9.1",
         "node-fetch": "^3.2.3",
         "node-kernel": "^1.0.2",
+        "random-forest": "^0.0.7",
         "rimraf": "^3.0.2",
         "secure-random-password": "^0.2.3"
     },
