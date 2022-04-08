@@ -57,6 +57,8 @@
         "jsonwebtoken": "^8.5.1",
         "jwt-decode": "^3.1.2",
         "lodash": "^4.17.21",
+        "ml-logistic-regression": "^2.0.0",
+        "ml-matrix": "^6.9.0",
         "ml-random-forest": "^2.1.0",
         "moment": "^2.29.1",
         "moment-timezone": "^0.5.34",

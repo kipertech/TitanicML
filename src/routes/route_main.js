@@ -4,8 +4,12 @@ import * as tf from '@tensorflow/tfjs';
 import moment from 'moment';
 import * as json2csv from 'json2csv';
 import { writeFile } from 'fs/promises';
+
 import { RandomForestClassifier, RandomForestRegression } from 'ml-random-forest';
 import { RandomForestClassifier as rfClassifier, RandomForestRegressor as rfRegression } from 'random-forest';
+
+import LogisticRegression from 'ml-logistic-regression';
+import { Matrix } from 'ml-matrix';
 
 import { Abort, Success } from '../utils';
 
@@ -399,6 +403,36 @@ mainRouter.get('/randomForestRegression2', (request, response) => {
 
                     // Write to file
                     writeFile(`./predictedResult_RandomForest_Regression2.csv`, json2csv.parse(submissionArr))
+                        .then(() => Success(response, 'Successfully trained model, took ' + (moment().unix() - startedAt).toString() + 's', 200))
+                        .catch((writeError) => Abort(response, 'Write Error', 500, writeError.message));
+                });
+        })
+        .catch((error) => Abort(response, 'Failed to read TRAIN file', 500, error.message));
+});
+// endregion
+
+// region Logistic Regression
+mainRouter.get('/logisticRegression', (request, response) => {
+    const startedAt = moment().unix();
+
+    cleanData("D:\\Projects\\OU\\TitanicML\\src\\data\\train.csv", true, true)
+        .then((result) => {
+            const { xTrain, yTrain } = result;
+
+            const logReg = new LogisticRegression({ numSteps: 1000, learningRate: 5e-3 });
+            logReg.train(new Matrix(xTrain.values), Matrix.columnVector(yTrain.values));
+
+            // Create models for TEST data
+            cleanData("D:\\Projects\\OU\\TitanicML\\src\\data\\test.csv", false, true)
+                .then((testModel) => {
+                    // Predict model
+                    const predictedResult = logReg.predict(new Matrix(testModel.xTrain.values));
+
+                    // Map into submission data format
+                    let submissionArr = testModel.passengerIDList.map((id, index) => ({ 'PassengerId': id, 'Survived': Math.round(predictedResult[index]) }));
+
+                    // Write to file
+                    writeFile(`./predictedResult_logisticRegression.csv`, json2csv.parse(submissionArr))
                         .then(() => Success(response, 'Successfully trained model, took ' + (moment().unix() - startedAt).toString() + 's', 200))
                         .catch((writeError) => Abort(response, 'Write Error', 500, writeError.message));
                 });
