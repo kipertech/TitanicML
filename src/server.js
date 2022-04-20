@@ -9,15 +9,7 @@
  */
 require('dotenv').config();
 
-// Set up LocalHost SSL
-import fs from 'fs';
-import path from 'path';
-const key = fs.readFileSync(path.join(__dirname, 'cert/CA/localhost/localhost.decrypted.key'));
-const cert = fs.readFileSync(path.join(__dirname, 'cert/CA/localhost/localhost.crt'));
-
-import https from 'https';
 import http from 'http';
-
 import app from './app.js';
 
 /**
@@ -32,7 +24,7 @@ app.set('port', port);
  * Fake SSL key for localhost is also added
  */
 
-let server = (process.env.IS_LOCAL === 'true') ? https.createServer({ key, cert }, app) : http.createServer(app);
+let server = http.createServer(app);
 
 /**
  * Listen on provided port, on all network interfaces.
@@ -107,5 +99,5 @@ function onListening()
         ? 'pipe ' + addr
         : 'port ' + addr.port;
 
-    console.log('Listening on ' + bind);
+    console.log('[SUCCESS] Server Listening on ' + bind);
 }

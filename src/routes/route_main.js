@@ -3,6 +3,7 @@ import * as dfd from 'danfojs-node';
 import * as tf from '@tensorflow/tfjs';
 import moment from 'moment';
 import * as json2csv from 'json2csv';
+import path from 'path';
 import { writeFile } from 'fs/promises';
 
 import { RandomForestClassifier, RandomForestRegression } from 'ml-random-forest';
@@ -205,7 +206,10 @@ function cleanData(dataPath = '', viewOutput = false, standardize = true)
 
 // region Tensorflow
 mainRouter.get('/trainModel', (request, response) => {
-    cleanData("D:\\Projects\\OU\\TitanicML\\src\\data\\train.csv", true)
+    let trainData = path.join(__dirname, '../data/train.csv'),
+        testData = path.join(__dirname, '../data/test.csv');
+
+    cleanData(trainData, true)
         .then((result) => {
             const { xTrain, yTrain, columnCount } = result;
 
@@ -243,7 +247,7 @@ mainRouter.get('/trainModel', (request, response) => {
                 })
                 .then(() => {
                     // Create models for TEST data
-                    cleanData("D:\\Projects\\OU\\TitanicML\\src\\data\\test.csv", false)
+                    cleanData(testData, false)
                         .then((testModel) => {
                             // Predict model
                             let predictResult = model.predict(testModel.xTrain.tensor).dataSync();
